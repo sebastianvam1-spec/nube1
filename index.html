@@ -2,14 +2,17 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Aplicación de Derivadas</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Calculadora de Derivadas Avanzada</title>
+
+  <!-- Librerías -->
   <script src="https://cdn.jsdelivr.net/npm/mathjs@11/lib/browser/math.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
       margin: 40px;
-      background: #f4f6f8;
+      background: #eef2f7;
     }
     h1 {
       color: #2c3e50;
@@ -17,7 +20,13 @@
     input, button {
       padding: 10px;
       font-size: 16px;
-      margin: 5px;
+      margin: 5px 0;
+    }
+    #resultado {
+      margin-top: 15px;
+      padding: 10px;
+      background: #fff;
+      border-left: 4px solid #3498db;
     }
     canvas {
       background: white;
@@ -28,50 +37,55 @@
 </head>
 <body>
 
-<h1>📈 Calculadora de Derivadas</h1>
+<h1>📘 Calculadora de Derivadas</h1>
 
-<p>Escribe una función en términos de <b>x</b> (ejemplo: x^2, sin(x), exp(x)):</p>
+<p>Escribe una función (ej: <b>x^2 + 3*x</b>, <b>sin(x)</b>, <b>exp(x)</b>):</p>
 
 <input type="text" id="funcion" placeholder="Ej: x^2 + 3*x">
-<button onclick="graficar()">Graficar</button>
+<br>
+<button onclick="calcular()">Calcular y Graficar</button>
+
+<div id="resultado"></div>
 
 <canvas id="grafica" width="800" height="400"></canvas>
 
 <script>
 let chart;
 
-function derivadaNumerica(f, x) {
-  let h = 0.0001;
-  return (f(x + h) - f(x - h)) / (2 * h);
-}
-
-function graficar() {
+function calcular() {
   const input = document.getElementById("funcion").value;
 
-  let f;
+  let expr, derivada;
   try {
-    f = math.compile(input);
+    expr = math.parse(input);
+    derivada = math.derivative(expr, 'x');
   } catch (e) {
     alert("Error en la función");
     return;
   }
 
+  // Mostrar resultado
+  document.getElementById("resultado").innerHTML = `
+    <b>Función:</b> f(x) = ${expr.toString()} <br>
+    <b>Derivada:</b> f'(x) = ${derivada.toString()}
+  `;
+
+  let f = expr.compile();
+  let df = derivada.compile();
+
   let xs = [];
   let ys = [];
-  let dydx = [];
+  let dys = [];
 
   for (let x = -10; x <= 10; x += 0.2) {
     try {
-      let y = f.evaluate({x: x});
-      let dy = derivadaNumerica((val) => f.evaluate({x: val}), x);
-
       xs.push(x);
-      ys.push(y);
-      dydx.push(dy);
+      ys.push(f.evaluate({x: x}));
+      dys.push(df.evaluate({x: x}));
     } catch {
       xs.push(x);
       ys.push(null);
-      dydx.push(null);
+      dys.push(null);
     }
   }
 
@@ -85,14 +99,14 @@ function graficar() {
       labels: xs,
       datasets: [
         {
-          label: 'Función f(x)',
+          label: 'f(x)',
           data: ys,
           borderColor: 'blue',
           fill: false
         },
         {
-          label: 'Derivada f\'(x)',
-          data: dydx,
+          label: "f'(x)",
+          data: dys,
           borderColor: 'red',
           fill: false
         }
@@ -100,6 +114,15 @@ function graficar() {
     },
     options: {
       responsive: true,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          position: 'top'
+        }
+      },
       scales: {
         x: {
           title: { display: true, text: 'x' }
